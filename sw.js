@@ -1,6 +1,6 @@
 // Keeps the portal pages on the phone so it opens without signal.
 // Bump the version when pages change, so phones fetch the new copies.
-const CACHE = "berat-portal-v1";
+const CACHE = "berat-portal-v2";
 const FILES = [
   "./", "index.html", "resident.html", "employee.html", "bcg.html",
   "style.css", "app.js", "manifest.json", "icon-192.png", "icon-512.png",
