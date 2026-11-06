@@ -1,0 +1,26 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #f4f7f5; color: #1b1b1b; }
+header { display: flex; align-items: center; gap: 12px; background: #1f7a45; color: #fff; padding: 16px; }
+header h1 { margin: 0; font-size: 1.4rem; }
+.back { color: #fff; text-decoration: none; font-size: 1.8rem; line-height: 1; }
+
+.buttons { display: flex; flex-direction: column; gap: 16px; padding: 16px; max-width: 480px; margin: 0 auto; }
+.big-button { display: flex; align-items: center; gap: 16px; padding: 24px; border-radius: 16px;
+  color: #fff; text-decoration: none; font-size: 1.4rem; font-weight: 600; }
+.big-button .icon { font-size: 2.2rem; }
+.big-button[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+.resident { background: #2e86c1; }
+.employee { background: #1f7a45; }
+.bcg { background: #7d3c98; }
+.small-button { align-self: center; padding: 10px 20px; font-size: 1rem; border-radius: 10px; border: 1px solid #999; background: #fff; }
+
+/* PIN pad */
+#pin-screen { padding: 16px; max-width: 360px; margin: 0 auto; }
+.pin-dots { height: 48px; text-align: center; font-size: 2rem; letter-spacing: 12px; }
+.pin-dots.wrong { color: #c0392b; animation: shake 0.3s; }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pin-pad button { padding: 22px 0; font-size: 1.8rem; border-radius: 16px; border: none; background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.pin-pad .pin-action { background: #e8e8e8; }
+.pin-pad .ok { background: #1f7a45; color: #fff; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }

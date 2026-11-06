@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Berat Waste — Employee</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1f7a45">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><a class="back" href="index.html">←</a><h1>Employee</h1></header>
+
+  <!-- PIN pad: shown until the correct PIN is entered on this phone -->
+  <main id="pin-screen">
+    <div id="pin-dots" class="pin-dots"></div>
+    <div class="pin-pad">
+      <button data-digit="1">1</button><button data-digit="2">2</button><button data-digit="3">3</button>
+      <button data-digit="4">4</button><button data-digit="5">5</button><button data-digit="6">6</button>
+      <button data-digit="7">7</button><button data-digit="8">8</button><button data-digit="9">9</button>
+      <button id="pin-clear" class="pin-action">✕</button><button data-digit="0">0</button><button id="pin-enter" class="pin-action ok">✓</button>
+    </div>
+  </main>
+
+  <!-- Employee buttons: shown after the correct PIN -->
+  <main id="employee-links" class="buttons" hidden>
+    <!-- Replace PASTE_TEST_FORM_LINK with your test Kobo form link -->
+    <a class="big-button employee" href="PASTE_TEST_FORM_LINK"><span class="icon">📝</span>Location check</a>
+    <button id="lock" class="small-button">Lock 🔒</button>
+  </main>
+
+  <script src="app.js"></script>
+  <script>setupPinPad();</script>
+</body>
+</html>
