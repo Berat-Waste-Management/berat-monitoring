@@ -6,10 +6,11 @@
   <title>Berat Waste — Employee</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f7a45">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-  <header><a class="back" href="index.html">←</a><h1>Employee</h1></header>
+  <header><a class="back" href="index.html">←</a><h1 data-i18n="employee">Employee</h1>
+    <div class="lang"><button data-lang="sq">SQ</button><button data-lang="en">EN</button></div></header>
 
   <!-- PIN pad: shown until the correct PIN is entered on this phone -->
   <main id="pin-screen">
@@ -25,11 +26,11 @@
   <!-- Employee buttons: shown after the correct PIN -->
   <main id="employee-links" class="buttons" hidden>
     <!-- Replace PASTE_TEST_FORM_LINK with your test Kobo form link -->
-    <a class="big-button employee" href="https://ee.kobotoolbox.org/x/TFOH0M1C"><span class="icon">📝</span>Location check</a>
-    <button id="lock" class="small-button">Lock 🔒</button>
+    <a class="big-button employee" href="https://ee.kobotoolbox.org/x/TFOH0M1C"><span class="icon">📝</span><span data-i18n="location_check">Location check</span></a>
+    <button id="lock" class="small-button"><span data-i18n="lock">Lock</span> 🔒</button>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
   <script>setupPinPad();</script>
 </body>
 </html>

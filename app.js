@@ -3,6 +3,53 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
 
+// Page text in each language. Albanian is the default; the choice is remembered on the phone.
+// Albanian wording is a draft: have a native speaker check it.
+const TRANSLATIONS = {
+  sq: {
+    home_title: "Berati Ndan Mbetjet",
+    resident: "Banor",
+    employee: "Punonjës",
+    bcg: "BCG / Bashkia",
+    report_problem: "Raporto një problem",
+    nearest_bins: "Koshat më të afërt (së shpejti)",
+    location_check: "Kontrolli i koshave",
+    lock: "Kyç",
+    open_dashboards: "Shiko të dhënat",
+  },
+  en: {
+    home_title: "Berat Waste",
+    resident: "Resident",
+    employee: "Employee",
+    bcg: "BCG / Municipality",
+    report_problem: "Report a problem",
+    nearest_bins: "Nearest bins (coming soon)",
+    location_check: "Location check",
+    lock: "Lock",
+    open_dashboards: "Open dashboards",
+  },
+};
+const LANG_KEY = "language";
+
+function applyLanguage(lang) {
+  const text = TRANSLATIONS[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = text[el.dataset.i18n];
+  });
+  document.querySelectorAll("[data-lang]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.lang === lang);
+  });
+}
+
+applyLanguage(localStorage.getItem(LANG_KEY) || "sq");
+document.querySelectorAll("[data-lang]").forEach((button) => {
+  button.addEventListener("click", () => {
+    localStorage.setItem(LANG_KEY, button.dataset.lang);
+    applyLanguage(button.dataset.lang);
+  });
+});
+
 // SHA-256 of the employee PIN (test PIN is 1111). To change the PIN, replace this
 // with the SHA-256 of the new PIN; the PIN itself never appears in the code.
 const EMPLOYEE_PIN_HASH = "0ffe1abd1a08215353c233d6e009613e95eec4253832a761af28ff37ac5a150c";

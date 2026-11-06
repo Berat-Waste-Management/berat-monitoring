@@ -8,15 +8,16 @@
   <link rel="icon" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#1f7a45">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-  <header><h1>Berat Waste</h1></header>
+  <header><h1 data-i18n="home_title">Berat Waste</h1>
+    <div class="lang"><button data-lang="sq">SQ</button><button data-lang="en">EN</button></div></header>
   <main class="buttons">
-    <a class="big-button resident" href="resident.html"><span class="icon">🏠</span>Resident</a>
-    <a class="big-button employee" href="employee.html"><span class="icon">🧹</span>Employee</a>
-    <a class="big-button bcg" href="bcg.html"><span class="icon">📊</span>BCG / Municipality</a>
+    <a class="big-button resident" href="resident.html"><span class="icon">🏠</span><span data-i18n="resident">Resident</span></a>
+    <a class="big-button employee" href="employee.html"><span class="icon">🧹</span><span data-i18n="employee">Employee</span></a>
+    <a class="big-button bcg" href="bcg.html"><span class="icon">📊</span><span data-i18n="bcg">BCG / Municipality</span></a>
   </main>
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
