@@ -1,7 +1,7 @@
 // Keeps the portal pages on the phone so it opens without signal.
 // When pages change, bump VERSION here and the ?v= numbers in the four .html files,
 // so phones and browsers fetch the new copies.
-const VERSION = 3;
+const VERSION = 4;
 const CACHE = `berat-portal-v${VERSION}`;
 const FILES = [
   "./", "index.html", "resident.html", "employee.html", "bcg.html",
