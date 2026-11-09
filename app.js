@@ -62,6 +62,10 @@ function applyLanguage(lang) {
   document.querySelectorAll("[data-lang]").forEach((button) => {
     button.classList.toggle("active", button.dataset.lang === lang);
   });
+  // Links with a version per language (e.g. the Kobo form) follow the language switch
+  document.querySelectorAll(`[data-href-${lang}]`).forEach((link) => {
+    link.href = link.getAttribute(`data-href-${lang}`);
+  });
 }
 
 applyLanguage(localStorage.getItem(LANG_KEY) || "sq");
