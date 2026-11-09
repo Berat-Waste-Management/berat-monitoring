@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Berat Waste — Scan paper form</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1f7a45">
+  <link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+  <header><a class="back" href="employee.html">←</a><h1 data-i18n="scan_form">Scan paper form</h1>
+    <div class="lang"><button data-lang="sq">SQ</button><button data-lang="en">EN</button></div></header>
+
+  <main class="buttons">
+    <p class="scan-help" data-i18n="scan_help">Lay the sheet flat in good light. All 4 black corner squares must be visible.</p>
+
+    <!-- On phones this opens the camera; on a computer it opens a file picker -->
+    <label class="big-button employee" id="take-photo">
+      <span class="icon">📷</span><span data-i18n="take_photo">Take photo of the sheet</span>
+      <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+    </label>
+
+    <p id="status" class="scan-status" hidden></p>
+    <ul id="check-list" class="check-list" hidden></ul>
+
+    <a id="open-form" class="big-button employee" hidden><span class="icon">✅</span><span data-i18n="open_form">Open form to check and send</span></a>
+
+    <details id="preview" hidden>
+      <summary data-i18n="show_read">Show what was read</summary>
+      <canvas id="preview-canvas" class="scan-preview"></canvas>
+    </details>
+
+    <p class="scan-private" data-i18n="photo_private">The photo stays on this phone; only the values you send go to Kobo.</p>
+  </main>
+
+  <script src="app.js?v=5"></script>
+  <script src="scan/reader.js?v=5"></script>
+  <script>
+    // Only for employees: the PIN is entered on the employee page
+    if (localStorage.getItem(UNLOCK_KEY) !== "yes") location.replace("employee.html");
+
+    const status = document.getElementById("status");
+    const checkList = document.getElementById("check-list");
+    const openForm = document.getElementById("open-form");
+    const preview = document.getElementById("preview");
+
+    function say(key, extra = "") {
+      status.hidden = false;
+      status.dataset.i18n = key;
+      applyLanguage(localStorage.getItem(LANG_KEY) || "sq");
+      if (extra) status.textContent += " " + extra;
+    }
+
+    ScanReader.load(); // start fetching the reader while the worker takes the photo
+
+    document.getElementById("photo").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      openForm.hidden = true; preview.hidden = true; checkList.hidden = true;
+      say("reading");
+      await new Promise((resolve) => setTimeout(resolve, 50)); // let the message show before the work starts
+      let result;
+      try {
+        result = await ScanReader.read(file);
+      } catch (error) {
+        console.error(error);
+        say("scan_fail_error");
+        return;
+      }
+      event.target.value = ""; // allow the same photo again
+      if (!result.ok) {
+        say(result.reason === "markers" ? "scan_fail_markers" : "scan_fail_match");
+        return;
+      }
+      say("scan_ok");
+      const names = ScanReader.config().forms[result.lang].field_names;
+      checkList.replaceChildren(...result.unsure.map((field) => {
+        const item = document.createElement("li");
+        item.textContent = names[field] || field;
+        return item;
+      }));
+      checkList.hidden = result.unsure.length === 0;
+      openForm.href = ScanReader.koboLink(result, location.href);
+      openForm.hidden = false;
+      ScanReader.drawResult(result, document.getElementById("preview-canvas"));
+      preview.hidden = false;
+    });
+  </script>
+</body>
+</html>

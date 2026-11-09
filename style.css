@@ -30,3 +30,11 @@ header h1 { margin: 0; font-size: 1.4rem; }
 .pin-pad .pin-action { background: #e8e8e8; }
 .pin-pad .ok { background: #1f7a45; color: #fff; }
 @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+/* Scan paper form page */
+label.big-button { cursor: pointer; }
+.scan-help, .scan-private { margin: 0; color: #444; line-height: 1.4; }
+.scan-private { font-size: 0.85rem; color: #666; }
+.scan-status { margin: 0; padding: 12px 14px; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); line-height: 1.4; }
+.check-list { margin: 0; padding: 10px 14px 10px 32px; border-radius: 10px; background: #fff4d6; }
+.scan-preview { width: 100%; height: auto; margin-top: 8px; border-radius: 8px; background: #fff; }
