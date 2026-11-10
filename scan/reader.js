@@ -1,6 +1,6 @@
 // Reads a photo of the v2 paper sheet on the phone. Nothing is uploaded anywhere.
 // Same steps as form_scanning/read_photos.py in berat-waste-db (keep the two in step):
-//   1. find the 4 black corner squares and straighten the page
+//   1. find the 4 black corner squares and straighten the page, then line up each field on its own
 //   2. tell the English sheet from the Albanian one
 //   3. tick boxes: is there new ink in the box?
 //   4. digit boxes: empty boxes are skipped, filled ones go to a tiny digit reader
@@ -197,16 +197,9 @@ const ScanReader = (() => {
 
   // ---------- boxes ----------
 
-  function region(box) {
+  function region(box) { // points -> pixel box on the straightened page
     const S = config.dpi / 72;
     return [Math.trunc(box[0] * S), Math.trunc(box[1] * S), Math.trunc(box[2] * S), Math.trunc(box[3] * S)];
-  }
-
-  function inkShare(mask, w, box) {
-    const [x0, y0, x1, y1] = region(box);
-    let sum = 0;
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) sum += mask[y * w + x];
-    return (x1 - x0) * (y1 - y0) > 0 ? sum / ((x1 - x0) * (y1 - y0)) : 0;
   }
 
   const tickBox = ([x, y]) => [x - 1, y - 2, x + 12, y + 11];
@@ -359,31 +352,29 @@ const ScanReader = (() => {
     }
     if (bestScore < 0.3) return { ok: false, reason: "match", score: bestScore };
 
-    const form = config.forms[lang], printed = blanks[lang].printed, w = page.w;
-    const newInk = new Uint8Array(ink.length);
-    for (let i = 0; i < ink.length; i++) newInk[i] = ink[i] && !printed[i] ? 1 : 0;
-
+    const form = config.forms[lang];
     const values = {}, unsure = [];
     for (const [field, boxes] of Object.entries(form.checkboxes)) {
-      const amounts = Object.entries(boxes).map(([option, corner]) => [option, inkShare(newInk, w, tickBox(corner))]);
+      const fieldInk = new FieldInk(ink, page, lang, Object.values(boxes).map(tickBox));
+      const amounts = Object.entries(boxes).map(([option, corner]) => [option, fieldInk.share(tickBox(corner))]);
       if (amounts.length === 1 && amounts[0][0] === "yes") values[field] = amounts[0][1] >= config.tick_min ? "yes" : "no";
       else {
         const [option, amount] = amounts.reduce((a, b) => (b[1] > a[1] ? b : a));
         values[field] = amount >= config.tick_min ? option : "";
       }
     }
-    for (const [field, boxes] of Object.entries(form.multi)) {
-      values[field] = Object.entries(boxes).filter(([, corner]) => inkShare(newInk, w, tickBox(corner)) >= config.tick_min)
+    for (const [field, boxes] of Object.entries(form.multi)) { // several boxes may be ticked, or none
+      const fieldInk = new FieldInk(ink, page, lang, Object.values(boxes).map(tickBox));
+      values[field] = Object.entries(boxes).filter(([, corner]) => fieldInk.share(tickBox(corner)) >= config.tick_min)
         .map(([option]) => option).join(",");
     }
     for (const [field, boxes] of Object.entries(form.digits)) {
+      const fieldInk = new FieldInk(ink, page, lang, boxes);
       let digits = "";
       for (const box of boxes) {
-        if (inkShare(newInk, w, digitInside(box)) < config.digit_min) continue;
-        const [x0, y0, x1, y1] = region(digitInside(box));
-        const crop = new Uint8Array((x1 - x0) * (y1 - y0));
-        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) crop[(y - y0) * (x1 - x0) + x - x0] = newInk[y * w + x];
-        const image = toMnist(crop, x1 - x0, y1 - y0);
+        if (fieldInk.share(digitInside(box)) < config.digit_min) continue;
+        const crop = fieldInk.region(digitInside(box));
+        const image = toMnist(crop.data, crop.w, crop.h);
         if (!image) continue;
         const [digit, confidence] = readDigit(image);
         digits += digit;
@@ -391,7 +382,79 @@ const ScanReader = (() => {
       }
       values[field] = field === "date" && digits.length === 8 ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}` : digits;
     }
-    return { ok: true, lang, values, unsure, page, newInk, seconds: (performance.now() - started) / 1000 };
+    return { ok: true, lang, values, unsure, page, seconds: (performance.now() - started) / 1000 };
+  }
+
+  // ---------- lining up each field (port of FieldInk in read_photos.py) ----------
+  // The corner squares straighten the page as a whole, but a bent sheet can still be a few
+  // millimetres off between them. So each field is shifted until its printed lines match the
+  // blank sheet, then each box fine-tunes on its own (a long row can bend along its length).
+
+  const ptsToPx = region;
+
+  function clipWindow([x0, y0, x1, y1], w, h) {
+    return [Math.max(x0, 0), Math.max(y0, 0), Math.min(x1, w), Math.min(y1, h)];
+  }
+
+  // Shift (dx, dy) within `reach` px of `around` where the photo's ink best covers the blank
+  // sheet's printed pixels inside `win` (pixels on the blank sheet). Outside the page counts as no ink.
+  function bestShift(ink, w, h, blankInk, win, around, reach) {
+    const [x0, y0, x1, y1] = win, pts = [], limit = config.align.search;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (blankInk[y * w + x]) pts.push(x, y);
+    const score = (dx, dy) => {
+      let hits = 0;
+      for (let i = 0; i < pts.length; i += 2) {
+        const x = pts[i] + dx, y = pts[i + 1] + dy;
+        if (x >= 0 && y >= 0 && x < w && y < h) hits += ink[y * w + x];
+      }
+      return hits - 0.01 * (Math.abs(dx - around[0]) + Math.abs(dy - around[1]));
+    };
+    const search = (centre, r, step) => {
+      let best = -1, shift = centre;
+      for (let dy = centre[1] - r; dy <= centre[1] + r; dy += step) {
+        for (let dx = centre[0] - r; dx <= centre[0] + r; dx += step) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) > limit) continue;
+          const s = score(dx, dy);
+          if (s > best) { best = s; shift = [dx, dy]; }
+        }
+      }
+      return shift;
+    };
+    return reach <= 8 ? search(around, reach, 1) : search(search(around, reach, 3), 2, 1); // every 3rd px, then every px
+  }
+
+  class FieldInk {
+    constructor(ink, page, lang, boxes) {
+      const { margin, search } = config.align;
+      Object.assign(this, { ink, w: page.w, h: page.h, blankInk: blanks[lang].ink, printed: blanks[lang].printed, cache: new Map() });
+      const win = clipWindow(ptsToPx([Math.min(...boxes.map((b) => b[0])) - margin, Math.min(...boxes.map((b) => b[1])) - margin,
+        Math.max(...boxes.map((b) => b[2])) + margin, Math.max(...boxes.map((b) => b[3])) + margin]), this.w, this.h);
+      this.shift = bestShift(ink, this.w, this.h, this.blankInk, win, [0, 0], search);
+    }
+
+    region(box) { // new ink inside `box` (points), lined up for that box: { data, w, h }
+      const key = box.join(",");
+      if (!this.cache.has(key)) {
+        const { box_margin: m, box_search: reach } = config.align;
+        const win = clipWindow(ptsToPx([box[0] - m, box[1] - m, box[2] + m, box[3] + m]), this.w, this.h);
+        const [dx, dy] = bestShift(this.ink, this.w, this.h, this.blankInk, win, this.shift, reach);
+        const [x0, y0, x1, y1] = ptsToPx(box), rw = x1 - x0, rh = y1 - y0, data = new Uint8Array(Math.max(rw, 0) * Math.max(rh, 0));
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+          const sx = x + dx, sy = y + dy;
+          const inked = sx >= 0 && sy >= 0 && sx < this.w && sy < this.h && this.ink[sy * this.w + sx];
+          data[(y - y0) * rw + (x - x0)] = inked && !this.printed[y * this.w + x] ? 1 : 0;
+        }
+        this.cache.set(key, { data, w: rw, h: rh });
+      }
+      return this.cache.get(key);
+    }
+
+    share(box) {
+      const { data } = this.region(box);
+      let sum = 0;
+      for (const v of data) sum += v;
+      return data.length ? sum / data.length : 0;
+    }
   }
 
   // ---------- Kobo link ----------
